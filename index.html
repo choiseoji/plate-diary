@@ -6,6 +6,7 @@
 <title>오늘의 한 접시</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --bg:#EAF1EA;
@@ -479,22 +480,32 @@
 (function(){
   const $ = (id) => document.getElementById(id);
 
-  // ---------- simple demo hash (NOT cryptographically secure) ----------
-  function simpleHash(str){
-    let h = 5381;
-    for(let i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h = h & 0xffffffff; }
-    return String(h);
+  // ======================================================
+  // SUPABASE CONFIG — 여기 두 값만 본인 프로젝트 값으로 채우면 됩니다.
+  // Supabase 대시보드 > Project Settings > API 에서 확인 가능
+  // ======================================================
+  const SUPABASE_URL = 'https://nuhasltrqjebjearbzwv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable__YRx767qMySMVndZFmMIbg_n11uQjgU';
+
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const BUCKET = 'plate-photos';
+  const PSEUDO_DOMAIN = 'platediary.local'; // 아이디를 이메일 형태로 바꾸기 위한 가짜 도메인
+
+  function usernameToEmail(username){
+    return `${username.toLowerCase().trim()}@${PSEUDO_DOMAIN}`;
   }
 
-  let currentUser = null;
+  let currentUser = null; // { id, username }
   let viewYear, viewMonth; // viewMonth 0-11
-  let monthCache = {}; // { "user:YYYY-MM": {day: dataURL} }
+  let monthCache = {}; // { "userId:YYYY-MM": {day: photoPath} }
 
   const today = new Date();
   const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
 
   function ymKey(y,m){ return `${y}-${String(m+1).padStart(2,'0')}`; }
   function dayKey(d){ return String(d).padStart(2,'0'); }
+  function firstOfMonth(y,m){ return `${y}-${String(m+1).padStart(2,'0')}-01`; }
+  function firstOfNextMonth(y,m){ const nm=m+1; return nm>11 ? `${y+1}-01-01` : `${y}-${String(nm+1).padStart(2,'0')}-01`; }
 
   function showToast(msg){
     const t = $('toast');
@@ -519,13 +530,6 @@
     $('authError').textContent = '';
   });
 
-  async function accountExists(username){
-    try{
-      const res = await window.storage.get(`account:${username}`, true);
-      return !!res;
-    }catch(e){ return false; }
-  }
-
   $('signupBtn').addEventListener('click', async ()=>{
     const id = $('signupId').value.trim();
     const pw = $('signupPw').value;
@@ -533,19 +537,34 @@
     const errEl = $('authError');
     errEl.textContent = '';
 
-    if(id.length < 2){ errEl.textContent = '아이디는 2자 이상 입력해주세요.'; return; }
-    if(pw.length < 4){ errEl.textContent = '비밀번호는 4자 이상 입력해주세요.'; return; }
+    if(!/^[a-zA-Z0-9_]{2,20}$/.test(id)){ errEl.textContent = '아이디는 영문/숫자/밑줄 2~20자로 입력해주세요.'; return; }
+    if(pw.length < 6){ errEl.textContent = '비밀번호는 6자 이상 입력해주세요.'; return; }
     if(pw !== pw2){ errEl.textContent = '비밀번호가 서로 달라요.'; return; }
 
     $('signupBtn').disabled = true;
     try{
-      if(await accountExists(id)){
-        errEl.textContent = '이미 사용 중인 아이디예요.';
+      const { data, error } = await sb.auth.signUp({
+        email: usernameToEmail(id),
+        password: pw,
+        options: { data: { username: id } }
+      });
+      if(error){
+        if(error.message.includes('already registered') || error.message.includes('already exists')){
+          errEl.textContent = '이미 사용 중인 아이디예요.';
+        } else {
+          errEl.textContent = '가입 중 문제가 생겼어요: ' + error.message;
+        }
         $('signupBtn').disabled = false;
         return;
       }
-      await window.storage.set(`account:${id}`, JSON.stringify({ pw: simpleHash(pw) }), true);
-      currentUser = id;
+      if(!data.session){
+        // 이메일 확인이 켜져있는 경우: Supabase 대시보드 > Authentication > Providers > Email
+        // 에서 "Confirm email"을 꺼주세요 (가짜 이메일이라 확인 메일을 받을 수 없음)
+        errEl.textContent = '가입은 됐지만 로그인이 안 돼요. Supabase에서 이메일 확인을 꺼주세요.';
+        $('signupBtn').disabled = false;
+        return;
+      }
+      currentUser = { id: data.user.id, username: id };
       enterApp();
     }catch(e){
       errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
@@ -562,11 +581,16 @@
 
     $('loginBtn').disabled = true;
     try{
-      const res = await window.storage.get(`account:${id}`, true);
-      if(!res){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않아요.'; $('loginBtn').disabled=false; return; }
-      const data = JSON.parse(res.value);
-      if(data.pw !== simpleHash(pw)){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않아요.'; $('loginBtn').disabled=false; return; }
-      currentUser = id;
+      const { data, error } = await sb.auth.signInWithPassword({
+        email: usernameToEmail(id),
+        password: pw
+      });
+      if(error){
+        errEl.textContent = '아이디 또는 비밀번호가 올바르지 않아요.';
+        $('loginBtn').disabled = false;
+        return;
+      }
+      currentUser = { id: data.user.id, username: id };
       enterApp();
     }catch(e){
       errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
@@ -574,13 +598,25 @@
     $('loginBtn').disabled = false;
   });
 
-  $('logoutBtn').addEventListener('click', ()=>{
+  $('logoutBtn').addEventListener('click', async ()=>{
+    await sb.auth.signOut();
     currentUser = null;
     monthCache = {};
     $('mainScreen').classList.add('hidden');
     $('authScreen').classList.remove('hidden');
     $('loginId').value=''; $('loginPw').value='';
   });
+
+  // 새로고침 후에도 로그인이 유지되도록 세션 복원 시도
+  (async function restoreSession(){
+    const { data } = await sb.auth.getSession();
+    if(data.session && data.session.user){
+      const u = data.session.user;
+      const username = (u.user_metadata && u.user_metadata.username) || u.email.split('@')[0];
+      currentUser = { id: u.id, username };
+      enterApp();
+    }
+  })();
 
   function enterApp(){
     $('authScreen').classList.add('hidden');
@@ -589,24 +625,35 @@
     loadMonth(viewYear, viewMonth);
   }
 
-  // ---------- Month data ----------
+  // ---------- Month data (Supabase table: entries) ----------
+  // table: entries(user_id uuid, entry_date date, photo_path text)
   async function fetchMonthEntries(y,m){
-    const key = `entries:${currentUser}:${ymKey(y,m)}`;
+    const from = firstOfMonth(y,m);
+    const to = firstOfNextMonth(y,m);
     try{
-      const res = await window.storage.get(key, true);
-      return res ? JSON.parse(res.value) : {};
+      const { data, error } = await sb
+        .from('entries')
+        .select('entry_date, photo_path')
+        .eq('user_id', currentUser.id)
+        .gte('entry_date', from)
+        .lt('entry_date', to);
+      if(error){ console.error(error); return {}; }
+      const map = {};
+      data.forEach(row => {
+        const d = row.entry_date.split('-')[2]; // "DD"
+        const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(row.photo_path);
+        map[d] = urlData.publicUrl;
+      });
+      return map;
     }catch(e){
+      console.error(e);
       return {};
     }
-  }
-  async function saveMonthEntries(y,m,obj){
-    const key = `entries:${currentUser}:${ymKey(y,m)}`;
-    await window.storage.set(key, JSON.stringify(obj), true);
   }
 
   async function loadMonth(y,m){
     $('monthLabel').textContent = `${y} · ${String(m+1).padStart(2,'0')}`;
-    const cacheKey = `${currentUser}:${ymKey(y,m)}`;
+    const cacheKey = `${currentUser.id}:${ymKey(y,m)}`;
     let entries = monthCache[cacheKey];
     if(!entries){
       entries = await fetchMonthEntries(y,m);
@@ -707,38 +754,55 @@
     if(!file) return;
 
     try{
-      const dataUrl = await cropToPlate(file);
-      const cacheKey = `${currentUser}:${ymKey(todayY,todayM)}`;
-      let entries = monthCache[cacheKey] || await fetchMonthEntries(todayY,todayM);
-      entries[dayKey(todayD)] = dataUrl;
-      await saveMonthEntries(todayY,todayM,entries);
+      const blob = await cropToPlateBlob(file);
+      const path = `${currentUser.id}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.jpg`;
+
+      const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
+        contentType: 'image/jpeg',
+        upsert: true
+      });
+      if(upErr){ throw upErr; }
+
+      const entryDate = `${todayY}-${String(todayM+1).padStart(2,'0')}-${dayKey(todayD)}`;
+      const { error: dbErr } = await sb.from('entries').upsert({
+        user_id: currentUser.id,
+        entry_date: entryDate,
+        photo_path: path
+      }, { onConflict: 'user_id,entry_date' });
+      if(dbErr){ throw dbErr; }
+
+      const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
+      const cacheKey = `${currentUser.id}:${ymKey(todayY,todayM)}`;
+      let entries = monthCache[cacheKey] || {};
+      entries[dayKey(todayD)] = urlData.publicUrl;
       monthCache[cacheKey] = entries;
+
       if(viewYear===todayY && viewMonth===todayM){
         renderCalendar(todayY,todayM,entries);
         updateFab(todayY,todayM,entries);
       }
       showToast('오늘의 접시를 담았어요 🍚');
     }catch(err){
+      console.error(err);
       showToast('사진을 담지 못했어요. 다시 시도해주세요.');
     }
   });
 
-  function cropToPlate(file){
+  function cropToPlateBlob(file){
     return new Promise((resolve, reject)=>{
       const reader = new FileReader();
       reader.onload = (ev)=>{
         const img = new Image();
         img.onload = ()=>{
-          const size = 360;
+          const size = 480;
           const canvas = document.createElement('canvas');
           canvas.width = size; canvas.height = size;
           const ctx = canvas.getContext('2d');
-          // cover-fit crop to square
           const srcSize = Math.min(img.width, img.height);
           const sx = (img.width - srcSize)/2;
           const sy = (img.height - srcSize)/2;
           ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
-          resolve(canvas.toDataURL('image/jpeg', 0.72));
+          canvas.toBlob((blob)=> resolve(blob), 'image/jpeg', 0.8);
         };
         img.onerror = reject;
         img.src = ev.target.result;
@@ -749,13 +813,13 @@
   }
 
   // ---------- Modal ----------
-  function openModal(y,m,d,dataUrl,isToday){
+  function openModal(y,m,d,photoUrl,isToday){
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
         <div class="modal-date">${y}. ${String(m+1).padStart(2,'0')}. ${String(d).padStart(2,'0')}</div>
-        <div class="modal-plate"><img src="${dataUrl}"></div>
+        <div class="modal-plate"><img src="${photoUrl}"></div>
         <div class="modal-actions">
           <button class="ghost-btn" id="modalCloseBtn">닫기</button>
           ${isToday ? '<button class="ghost-btn danger" id="modalDeleteBtn">다시 찍기</button>' : ''}
@@ -768,15 +832,25 @@
     const delBtn = overlay.querySelector('#modalDeleteBtn');
     if(delBtn){
       delBtn.addEventListener('click', async ()=>{
-        const cacheKey = `${currentUser}:${ymKey(y,m)}`;
-        let entries = monthCache[cacheKey] || await fetchMonthEntries(y,m);
-        delete entries[dayKey(d)];
-        await saveMonthEntries(y,m,entries);
-        monthCache[cacheKey] = entries;
-        overlay.remove();
-        renderCalendar(y,m,entries);
-        updateFab(y,m,entries);
-        showToast('오늘의 접시를 비웠어요');
+        try{
+          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.jpg`;
+          const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
+          await sb.storage.from(BUCKET).remove([path]);
+          await sb.from('entries').delete().eq('user_id', currentUser.id).eq('entry_date', entryDate);
+
+          const cacheKey = `${currentUser.id}:${ymKey(y,m)}`;
+          let entries = monthCache[cacheKey] || {};
+          delete entries[dayKey(d)];
+          monthCache[cacheKey] = entries;
+
+          overlay.remove();
+          renderCalendar(y,m,entries);
+          updateFab(y,m,entries);
+          showToast('오늘의 접시를 비웠어요');
+        }catch(e){
+          console.error(e);
+          showToast('삭제하지 못했어요. 다시 시도해주세요.');
+        }
       });
     }
   }
