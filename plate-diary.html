@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>오늘의 한 접시</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#EAF1EA;
+    --plate:#FFFDF6;
+    --ink:#2B3A34;
+    --ink-soft:#5C6F66;
+    --accent:#E8A34D;
+    --accent-dark:#C97F2E;
+    --coral:#C65D4B;
+    --sage:#8FA89C;
+    --line:#D9E3DB;
+    --shadow: 0 10px 30px rgba(43,58,52,0.12);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg);
+    font-family:'Noto Sans KR', sans-serif;
+    color:var(--ink);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px 12px;
+  }
+  .phone{
+    width:100%;
+    max-width:400px;
+    min-height:780px;
+    background: var(--plate);
+    border-radius:36px;
+    box-shadow: var(--shadow), 0 0 0 8px #dfe9e2;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    width:120px;height:22px;background:#dfe9e2;
+    border-radius:0 0 16px 16px;
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    z-index:5;
+  }
+  .screen{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:44px 22px 24px;
+    position:relative;
+    overflow-y:auto;
+  }
+  .hidden{display:none !important;}
+
+  /* ---------- Auth ---------- */
+  .brandmark{
+    width:64px;height:64px;margin:0 auto 10px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand-title{
+    font-family:'Gowun Batang', serif;
+    font-size:24px;
+    text-align:center;
+    margin:0 0 4px;
+    letter-spacing:0.02em;
+  }
+  .brand-sub{
+    text-align:center;
+    color:var(--ink-soft);
+    font-size:13px;
+    margin:0 0 28px;
+  }
+  .tabs{
+    display:flex;
+    background:var(--bg);
+    border-radius:14px;
+    padding:4px;
+    margin-bottom:22px;
+  }
+  .tab-btn{
+    flex:1;
+    border:none;
+    background:transparent;
+    padding:10px 0;
+    font-family:'Noto Sans KR';
+    font-weight:700;
+    font-size:14px;
+    color:var(--ink-soft);
+    border-radius:11px;
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .tab-btn.active{
+    background:var(--plate);
+    color:var(--ink);
+    box-shadow:0 2px 8px rgba(43,58,52,0.10);
+  }
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+    font-weight:500;
+  }
+  .field input{
+    width:100%;
+    padding:13px 14px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    font-size:15px;
+    font-family:'Noto Sans KR';
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  .field input:focus{ border-color:var(--accent); }
+  .primary-btn{
+    width:100%;
+    padding:14px 0;
+    background:var(--coral);
+    color:#fff;
+    border:none;
+    border-radius:14px;
+    font-size:15px;
+    font-weight:700;
+    font-family:'Noto Sans KR';
+    cursor:pointer;
+    margin-top:8px;
+    transition:transform .12s ease, background .15s ease;
+  }
+  .primary-btn:hover{ background:#B14E3E; }
+  .primary-btn:active{ transform:scale(0.98); }
+  .primary-btn:disabled{ background:#cbb9b3; cursor:not-allowed; }
+  .error-text{
+    color:var(--coral);
+    font-size:12.5px;
+    margin-top:10px;
+    text-align:center;
+    min-height:16px;
+  }
+
+  /* ---------- Main ---------- */
+  .header-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .header-title{
+    font-family:'Gowun Batang', serif;
+    font-size:20px;
+  }
+  .header-title span{ color:var(--accent-dark); }
+  .icon-btn{
+    background:var(--bg);
+    border:none;
+    width:34px;height:34px;
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    color:var(--ink-soft);
+  }
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    margin-bottom:14px;
+  }
+  .month-nav button{
+    background:none;border:none;cursor:pointer;
+    color:var(--sage);
+    font-size:18px;
+    padding:4px 8px;
+  }
+  .month-label{
+    font-family:'Space Mono', monospace;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    min-width:120px;
+    text-align:center;
+  }
+  .weekday-row{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    margin-bottom:6px;
+  }
+  .weekday-row div{
+    text-align:center;
+    font-family:'Space Mono', monospace;
+    font-size:11px;
+    color:var(--sage);
+    font-weight:700;
+  }
+  .calendar-grid{
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    gap:4px;
+    margin-bottom:18px;
+  }
+  .day-cell{
+    aspect-ratio:1/1;
+    border-radius:12px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    cursor:default;
+  }
+  .day-cell.empty-slot{ visibility:hidden; }
+  .day-num{
+    font-family:'Space Mono', monospace;
+    font-size:10px;
+    color:var(--ink-soft);
+    position:absolute;
+    top:3px;
+    left:6px;
+  }
+  .plate-wrap{
+    width:70%;
+    aspect-ratio:1/1;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+    border:1.5px dashed var(--line);
+    background:transparent;
+  }
+  .plate-wrap.filled{
+    border:2px solid #fff;
+    box-shadow:0 0 0 2px var(--line), 0 3px 8px rgba(43,58,52,0.15);
+    cursor:pointer;
+    animation:pop .25s ease;
+  }
+  .plate-wrap img{
+    width:100%;height:100%;object-fit:cover;
+  }
+  .day-cell.today .day-num{ color:var(--coral); font-weight:700; }
+  .day-cell.today .plate-wrap{ border-color:var(--accent); border-style:solid; border-width:1.5px; }
+  .day-cell.today .plate-wrap.filled{ box-shadow:0 0 0 2px var(--accent), 0 3px 8px rgba(43,58,52,0.15); }
+
+  @keyframes pop{
+    0%{ transform:scale(0.6); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+
+  .spacer{ flex:1; }
+
+  .fab-area{
+    margin-top:auto;
+    padding-top:8px;
+    display:flex;
+    justify-content:center;
+  }
+  .fab{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    padding:13px 22px;
+    border-radius:999px;
+    font-family:'Noto Sans KR';
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    box-shadow:0 6px 18px rgba(232,163,77,0.45);
+    transition:transform .15s ease, background .15s ease;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .fab:active{ transform:scale(0.96); }
+  .fab.done{
+    background:#E4EAE6;
+    color:var(--ink-soft);
+    box-shadow:none;
+    cursor:default;
+    animation:none;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 6px 18px rgba(232,163,77,0.45); }
+    50%{ box-shadow:0 6px 22px rgba(232,163,77,0.7); }
+  }
+  .hint-text{
+    text-align:center;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    margin-top:10px;
+  }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay{
+    position:absolute;
+    inset:0;
+    background:rgba(43,58,52,0.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:20;
+    padding:30px;
+  }
+  .modal-card{
+    background:var(--plate);
+    border-radius:24px;
+    padding:26px 22px 22px;
+    width:100%;
+    text-align:center;
+    animation:modalIn .2s ease;
+    box-shadow:var(--shadow);
+  }
+  @keyframes modalIn{
+    0%{ transform:scale(0.9); opacity:0; }
+    100%{ transform:scale(1); opacity:1; }
+  }
+  .modal-date{
+    font-family:'Space Mono', monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+    margin-bottom:14px;
+  }
+  .modal-plate{
+    width:180px;height:180px;
+    border-radius:50%;
+    overflow:hidden;
+    margin:0 auto 18px;
+    border:3px solid #fff;
+    box-shadow:0 0 0 2px var(--line), 0 8px 20px rgba(43,58,52,0.18);
+  }
+  .modal-plate img{ width:100%;height:100%;object-fit:cover; }
+  .modal-actions{
+    display:flex;
+    gap:8px;
+  }
+  .ghost-btn{
+    flex:1;
+    padding:11px 0;
+    border-radius:12px;
+    border:1.5px solid var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    font-family:'Noto Sans KR';
+    font-weight:700;
+    font-size:13.5px;
+    cursor:pointer;
+  }
+  .ghost-btn.danger{
+    border-color:#ecd2cc;
+    color:var(--coral);
+  }
+
+  .toast{
+    position:absolute;
+    bottom:26px;
+    left:50%;
+    transform:translateX(-50%);
+    background:var(--ink);
+    color:#fff;
+    padding:10px 18px;
+    border-radius:999px;
+    font-size:12.5px;
+    z-index:30;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .25s ease, bottom .25s ease;
+  }
+  .toast.show{ opacity:1; bottom:36px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- AUTH SCREEN -->
+  <div class="screen" id="authScreen">
+    <div class="brandmark">
+      <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+        <circle cx="26" cy="26" r="24" fill="#FFFDF6" stroke="#D9E3DB" stroke-width="2"/>
+        <circle cx="26" cy="26" r="16" fill="none" stroke="#E8A34D" stroke-width="1.5" stroke-dasharray="2 4"/>
+        <circle cx="26" cy="26" r="6" fill="#C65D4B"/>
+      </svg>
+    </div>
+    <h1 class="brand-title">오늘의 한 접시</h1>
+    <p class="brand-sub">매일 한 장, 오늘의 식탁을 담아요</p>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabLogin">로그인</button>
+      <button class="tab-btn" id="tabSignup">회원가입</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="field">
+        <label>아이디</label>
+        <input type="text" id="loginId" autocomplete="username" placeholder="아이디를 입력해요">
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="loginPw" autocomplete="current-password" placeholder="비밀번호를 입력해요">
+      </div>
+      <button class="primary-btn" id="loginBtn">로그인</button>
+    </div>
+
+    <div id="signupForm" class="hidden">
+      <div class="field">
+        <label>아이디</label>
+        <input type="text" id="signupId" placeholder="사용할 아이디">
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="signupPw" placeholder="비밀번호 (4자 이상)">
+      </div>
+      <div class="field">
+        <label>비밀번호 확인</label>
+        <input type="password" id="signupPw2" placeholder="비밀번호 다시 입력">
+      </div>
+      <button class="primary-btn" id="signupBtn">시작하기</button>
+    </div>
+
+    <p class="error-text" id="authError"></p>
+  </div>
+
+  <!-- MAIN SCREEN -->
+  <div class="screen hidden" id="mainScreen">
+    <div class="header-row">
+      <div class="header-title">오늘의 <span>한 접시</span></div>
+      <button class="icon-btn" id="logoutBtn" title="로그아웃">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="month-nav">
+      <button id="prevMonth">◀</button>
+      <div class="month-label" id="monthLabel">2026 · 07</div>
+      <button id="nextMonth">▶</button>
+    </div>
+
+    <div class="weekday-row">
+      <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <div class="spacer"></div>
+    <div class="fab-area">
+      <button class="fab" id="fabBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        <span id="fabLabel">오늘의 접시 담기</span>
+      </button>
+    </div>
+    <p class="hint-text" id="hintText">하루에 한 장, 오늘 먹은 음식을 담아보세요</p>
+  </div>
+
+  <input type="file" accept="image/*" capture="environment" id="fileInput" class="hidden">
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- simple demo hash (NOT cryptographically secure) ----------
+  function simpleHash(str){
+    let h = 5381;
+    for(let i=0;i<str.length;i++){ h = ((h<<5)+h) + str.charCodeAt(i); h = h & 0xffffffff; }
+    return String(h);
+  }
+
+  let currentUser = null;
+  let viewYear, viewMonth; // viewMonth 0-11
+  let monthCache = {}; // { "user:YYYY-MM": {day: dataURL} }
+
+  const today = new Date();
+  const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+
+  function ymKey(y,m){ return `${y}-${String(m+1).padStart(2,'0')}`; }
+  function dayKey(d){ return String(d).padStart(2,'0'); }
+
+  function showToast(msg){
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(()=> t.classList.remove('show'), 1800);
+  }
+
+  // ---------- Auth tab switching ----------
+  $('tabLogin').addEventListener('click', ()=>{
+    $('tabLogin').classList.add('active');
+    $('tabSignup').classList.remove('active');
+    $('loginForm').classList.remove('hidden');
+    $('signupForm').classList.add('hidden');
+    $('authError').textContent = '';
+  });
+  $('tabSignup').addEventListener('click', ()=>{
+    $('tabSignup').classList.add('active');
+    $('tabLogin').classList.remove('active');
+    $('signupForm').classList.remove('hidden');
+    $('loginForm').classList.add('hidden');
+    $('authError').textContent = '';
+  });
+
+  async function accountExists(username){
+    try{
+      const res = await window.storage.get(`account:${username}`, true);
+      return !!res;
+    }catch(e){ return false; }
+  }
+
+  $('signupBtn').addEventListener('click', async ()=>{
+    const id = $('signupId').value.trim();
+    const pw = $('signupPw').value;
+    const pw2 = $('signupPw2').value;
+    const errEl = $('authError');
+    errEl.textContent = '';
+
+    if(id.length < 2){ errEl.textContent = '아이디는 2자 이상 입력해주세요.'; return; }
+    if(pw.length < 4){ errEl.textContent = '비밀번호는 4자 이상 입력해주세요.'; return; }
+    if(pw !== pw2){ errEl.textContent = '비밀번호가 서로 달라요.'; return; }
+
+    $('signupBtn').disabled = true;
+    try{
+      if(await accountExists(id)){
+        errEl.textContent = '이미 사용 중인 아이디예요.';
+        $('signupBtn').disabled = false;
+        return;
+      }
+      await window.storage.set(`account:${id}`, JSON.stringify({ pw: simpleHash(pw) }), true);
+      currentUser = id;
+      enterApp();
+    }catch(e){
+      errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
+    }
+    $('signupBtn').disabled = false;
+  });
+
+  $('loginBtn').addEventListener('click', async ()=>{
+    const id = $('loginId').value.trim();
+    const pw = $('loginPw').value;
+    const errEl = $('authError');
+    errEl.textContent = '';
+    if(!id || !pw){ errEl.textContent = '아이디와 비밀번호를 입력해주세요.'; return; }
+
+    $('loginBtn').disabled = true;
+    try{
+      const res = await window.storage.get(`account:${id}`, true);
+      if(!res){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않아요.'; $('loginBtn').disabled=false; return; }
+      const data = JSON.parse(res.value);
+      if(data.pw !== simpleHash(pw)){ errEl.textContent = '아이디 또는 비밀번호가 올바르지 않아요.'; $('loginBtn').disabled=false; return; }
+      currentUser = id;
+      enterApp();
+    }catch(e){
+      errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
+    }
+    $('loginBtn').disabled = false;
+  });
+
+  $('logoutBtn').addEventListener('click', ()=>{
+    currentUser = null;
+    monthCache = {};
+    $('mainScreen').classList.add('hidden');
+    $('authScreen').classList.remove('hidden');
+    $('loginId').value=''; $('loginPw').value='';
+  });
+
+  function enterApp(){
+    $('authScreen').classList.add('hidden');
+    $('mainScreen').classList.remove('hidden');
+    viewYear = todayY; viewMonth = todayM;
+    loadMonth(viewYear, viewMonth);
+  }
+
+  // ---------- Month data ----------
+  async function fetchMonthEntries(y,m){
+    const key = `entries:${currentUser}:${ymKey(y,m)}`;
+    try{
+      const res = await window.storage.get(key, true);
+      return res ? JSON.parse(res.value) : {};
+    }catch(e){
+      return {};
+    }
+  }
+  async function saveMonthEntries(y,m,obj){
+    const key = `entries:${currentUser}:${ymKey(y,m)}`;
+    await window.storage.set(key, JSON.stringify(obj), true);
+  }
+
+  async function loadMonth(y,m){
+    $('monthLabel').textContent = `${y} · ${String(m+1).padStart(2,'0')}`;
+    const cacheKey = `${currentUser}:${ymKey(y,m)}`;
+    let entries = monthCache[cacheKey];
+    if(!entries){
+      entries = await fetchMonthEntries(y,m);
+      monthCache[cacheKey] = entries;
+    }
+    renderCalendar(y,m,entries);
+    updateFab(y,m,entries);
+  }
+
+  $('prevMonth').addEventListener('click', ()=>{
+    viewMonth--; if(viewMonth<0){ viewMonth=11; viewYear--; }
+    loadMonth(viewYear, viewMonth);
+  });
+  $('nextMonth').addEventListener('click', ()=>{
+    viewMonth++; if(viewMonth>11){ viewMonth=0; viewYear++; }
+    loadMonth(viewYear, viewMonth);
+  });
+
+  function renderCalendar(y,m,entries){
+    const grid = $('calendarGrid');
+    grid.innerHTML = '';
+    const firstDow = new Date(y,m,1).getDay();
+    const daysInMonth = new Date(y,m+1,0).getDate();
+
+    for(let i=0;i<firstDow;i++){
+      const empty = document.createElement('div');
+      empty.className = 'day-cell empty-slot';
+      grid.appendChild(empty);
+    }
+    for(let d=1; d<=daysInMonth; d++){
+      const cell = document.createElement('div');
+      const isToday = (y===todayY && m===todayM && d===todayD);
+      cell.className = 'day-cell' + (isToday ? ' today' : '');
+
+      const num = document.createElement('div');
+      num.className = 'day-num';
+      num.textContent = d;
+      cell.appendChild(num);
+
+      const plate = document.createElement('div');
+      const dk = dayKey(d);
+      if(entries[dk]){
+        plate.className = 'plate-wrap filled';
+        const img = document.createElement('img');
+        img.src = entries[dk];
+        plate.appendChild(img);
+        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday));
+      } else {
+        plate.className = 'plate-wrap';
+        cell.addEventListener('click', ()=>{
+          if(isToday){
+            $('fileInput').click();
+          } else {
+            showToast('오늘의 접시만 채울 수 있어요 🍽️');
+          }
+        });
+      }
+      cell.appendChild(plate);
+      grid.appendChild(cell);
+    }
+  }
+
+  function updateFab(y,m,entries){
+    const isCurrentMonthView = (y===todayY && m===todayM);
+    const fab = $('fabBtn');
+    const label = $('fabLabel');
+    const hint = $('hintText');
+    if(!isCurrentMonthView){
+      fab.classList.add('done');
+      fab.disabled = true;
+      label.textContent = '오늘로 이동해서 담아보세요';
+      hint.textContent = '이번 달 기록은 눌러서 볼 수 있어요';
+      return;
+    }
+    const dk = dayKey(todayD);
+    if(entries[dk]){
+      fab.classList.add('done');
+      fab.disabled = true;
+      label.textContent = '오늘 접시 완료';
+      hint.textContent = '내일 또 새로운 접시를 담아주세요';
+    } else {
+      fab.classList.remove('done');
+      fab.disabled = false;
+      label.textContent = '오늘의 접시 담기';
+      hint.textContent = '하루에 한 장, 오늘 먹은 음식을 담아보세요';
+    }
+  }
+
+  $('fabBtn').addEventListener('click', ()=>{
+    if($('fabBtn').disabled) return;
+    $('fileInput').click();
+  });
+
+  // ---------- Image capture & crop ----------
+  $('fileInput').addEventListener('change', async (e)=>{
+    const file = e.target.files[0];
+    e.target.value = '';
+    if(!file) return;
+
+    try{
+      const dataUrl = await cropToPlate(file);
+      const cacheKey = `${currentUser}:${ymKey(todayY,todayM)}`;
+      let entries = monthCache[cacheKey] || await fetchMonthEntries(todayY,todayM);
+      entries[dayKey(todayD)] = dataUrl;
+      await saveMonthEntries(todayY,todayM,entries);
+      monthCache[cacheKey] = entries;
+      if(viewYear===todayY && viewMonth===todayM){
+        renderCalendar(todayY,todayM,entries);
+        updateFab(todayY,todayM,entries);
+      }
+      showToast('오늘의 접시를 담았어요 🍚');
+    }catch(err){
+      showToast('사진을 담지 못했어요. 다시 시도해주세요.');
+    }
+  });
+
+  function cropToPlate(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const size = 360;
+          const canvas = document.createElement('canvas');
+          canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          // cover-fit crop to square
+          const srcSize = Math.min(img.width, img.height);
+          const sx = (img.width - srcSize)/2;
+          const sy = (img.height - srcSize)/2;
+          ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // ---------- Modal ----------
+  function openModal(y,m,d,dataUrl,isToday){
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-card">
+        <div class="modal-date">${y}. ${String(m+1).padStart(2,'0')}. ${String(d).padStart(2,'0')}</div>
+        <div class="modal-plate"><img src="${dataUrl}"></div>
+        <div class="modal-actions">
+          <button class="ghost-btn" id="modalCloseBtn">닫기</button>
+          ${isToday ? '<button class="ghost-btn danger" id="modalDeleteBtn">다시 찍기</button>' : ''}
+        </div>
+      </div>
+    `;
+    $('mainScreen').appendChild(overlay);
+    overlay.querySelector('#modalCloseBtn').addEventListener('click', ()=> overlay.remove());
+    overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+    const delBtn = overlay.querySelector('#modalDeleteBtn');
+    if(delBtn){
+      delBtn.addEventListener('click', async ()=>{
+        const cacheKey = `${currentUser}:${ymKey(y,m)}`;
+        let entries = monthCache[cacheKey] || await fetchMonthEntries(y,m);
+        delete entries[dayKey(d)];
+        await saveMonthEntries(y,m,entries);
+        monthCache[cacheKey] = entries;
+        overlay.remove();
+        renderCalendar(y,m,entries);
+        updateFab(y,m,entries);
+        showToast('오늘의 접시를 비웠어요');
+      });
+    }
+  }
+})();
+</script>
+</body>
+</html>
