@@ -484,10 +484,11 @@
   // SUPABASE CONFIG — 여기 두 값만 본인 프로젝트 값으로 채우면 됩니다.
   // Supabase 대시보드 > Project Settings > API 에서 확인 가능
   // ======================================================
-  const SUPABASE_URL = 'https://nuhasltrqjebjearbzwv.supabase.co';
-  const SUPABASE_ANON_KEY = 'sb_publishable__YRx767qMySMVndZFmMIbg_n11uQjgU';
+  const SUPABASE_URL = 'https://YOUR-PROJECT-REF.supabase.co';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_PUBLIC_KEY';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  window._sb = sb; // 디버깅용: 브라우저 콘솔에서 _sb.auth.getSession() 등으로 확인 가능
   const BUCKET = 'plate-photos';
   const PSEUDO_DOMAIN = 'platediary.local'; // 아이디를 이메일 형태로 바꾸기 위한 가짜 도메인
 
@@ -754,8 +755,15 @@
     if(!file) return;
 
     try{
+      const { data: authData, error: authErr } = await sb.auth.getUser();
+      if(authErr || !authData.user){
+        showToast('로그인이 풀린 것 같아요. 다시 로그인해주세요.');
+        return;
+      }
+      const realUserId = authData.user.id; // 캐시된 currentUser.id 대신 지금 이 순간의 실제 인증 uid 사용
+
       const blob = await cropToPlateBlob(file);
-      const path = `${currentUser.id}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.jpg`;
+      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.jpg`;
 
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
         contentType: 'image/jpeg',
@@ -765,7 +773,7 @@
 
       const entryDate = `${todayY}-${String(todayM+1).padStart(2,'0')}-${dayKey(todayD)}`;
       const { error: dbErr } = await sb.from('entries').upsert({
-        user_id: currentUser.id,
+        user_id: realUserId,
         entry_date: entryDate,
         photo_path: path
       }, { onConflict: 'user_id,entry_date' });
