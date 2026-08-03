@@ -813,12 +813,14 @@
       }
       const realUserId = authData.user.id;
 
-      const blob = await makeStickerBlob(file);
-      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.png`;
+      const { blob, isSticker } = await makeStickerBlob(file);
+      const ext = isSticker ? 'png' : 'jpg';
+      const contentType = isSticker ? 'image/png' : 'image/jpeg';
+      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.${ext}`;
 
       showPersistentToast('저장하는 중...');
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
-        contentType: 'image/png',
+        contentType,
         upsert: true
       });
       if(upErr){ throw upErr; }
@@ -855,30 +857,51 @@
   });
 
   async function makeStickerBlob(file){
-    showPersistentToast('AI 모델 준비 중... (처음엔 다운로드가 필요해요 ☕)');
+    showPersistentToast('AI 모델 준비 중... ☕');
     try{
-      const { removeBackground } = await import(
-        'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/index.mjs'
-      );
+      const { removeBackground } = await import('https://esm.sh/@imgly/background-removal');
       const transparent = await removeBackground(file, {
-        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/',
         progress: (key, current, total)=>{
           if(total > 0){
             const pct = Math.round((current / total) * 100);
-            if(key.includes('fetch') || key.includes('model')){
-              showPersistentToast(`AI 모델 다운로드 중... ${pct}%`);
-            } else {
-              showPersistentToast(`배경 지우는 중... ${pct}%`);
-            }
+            showPersistentToast(`배경 지우는 중... ${pct}%`);
           }
         }
       });
       showPersistentToast('스티커 테두리 그리는 중... ✂️');
-      return await addStickerBorder(transparent);
+      const blob = await addStickerBorder(transparent);
+      return { blob, isSticker: true };
     }catch(err){
-      hideToast();
-      throw err;
+      // 배경 제거 실패 시 원형 크롭으로 폴백 (업로드는 항상 성공)
+      console.error('[배경제거 실패, 원형 크롭으로 진행]', err);
+      showPersistentToast('사진 처리 중...');
+      const blob = await cropToCircleBlob(file);
+      return { blob, isSticker: false };
     }
+  }
+
+  function cropToCircleBlob(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onload = (ev)=>{
+        const img = new Image();
+        img.onload = ()=>{
+          const size = 480;
+          const canvas = document.createElement('canvas');
+          canvas.width = size; canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const srcSize = Math.min(img.width, img.height);
+          const sx = (img.width - srcSize) / 2;
+          const sy = (img.height - srcSize) / 2;
+          ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
+          canvas.toBlob((blob)=> resolve(blob), 'image/jpeg', 0.8);
+        };
+        img.onerror = reject;
+        img.src = ev.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
   }
 
   function addStickerBorder(transparentBlob){
