@@ -294,6 +294,18 @@
     box-shadow:0 0 0 2px var(--line), 0 8px 20px rgba(43,58,52,0.18);
   }
   .modal-plate img{ width:100%;height:100%;object-fit:cover; }
+  .modal-comments-section{
+    max-height:140px;
+    overflow-y:auto;
+    margin-bottom:14px;
+    text-align:left;
+  }
+  .modal-comments-title{
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:8px;
+  }
   .modal-actions{
     display:flex;
     gap:8px;
@@ -1188,12 +1200,17 @@
 
   // ---------- Modal (내 사진) ----------
   function openModal(y,m,d,photoUrl,photoPath,isToday){
+    const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
         <div class="modal-date">${y}. ${String(m+1).padStart(2,'0')}. ${String(d).padStart(2,'0')}</div>
         <div class="modal-plate sticker"><img src="${photoUrl}"></div>
+        <div class="modal-comments-section">
+          <div class="modal-comments-title">받은 댓글</div>
+          <div id="modalCommentsList"><p class="no-comments">불러오는 중...</p></div>
+        </div>
         <div class="modal-actions">
           <button class="ghost-btn" id="modalCloseBtn">닫기</button>
           ${isToday ? '<button class="ghost-btn danger" id="modalDeleteBtn">다시 찍기</button>' : ''}
@@ -1203,13 +1220,35 @@
     $('mainScreen').appendChild(overlay);
     overlay.querySelector('#modalCloseBtn').addEventListener('click', ()=> overlay.remove());
     overlay.addEventListener('click', (e)=>{ if(e.target===overlay) overlay.remove(); });
+
+    // 해당 날짜 댓글 로드
+    sb.from('comments')
+      .select('*')
+      .eq('to_user_id', currentUser.id)
+      .eq('entry_date', entryDate)
+      .order('created_at', { ascending: true })
+      .then(({ data }) => {
+        const el = overlay.querySelector('#modalCommentsList');
+        if(!data || data.length === 0){
+          el.innerHTML = '<p class="no-comments">받은 댓글이 없어요</p>';
+          return;
+        }
+        el.innerHTML = data.map(c => `
+          <div class="comment-item">
+            <div class="comment-header">
+              <span class="comment-from">${escHtml(c.from_username)}</span>
+              <span class="comment-time">${formatTime(c.created_at)}</span>
+            </div>
+            <div class="comment-text">${escHtml(c.content)}</div>
+          </div>
+        `).join('');
+      });
+
     const delBtn = overlay.querySelector('#modalDeleteBtn');
     if(delBtn){
       delBtn.addEventListener('click', async ()=>{
         try{
-          const path = photoPath;
-          const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
-          await sb.storage.from(BUCKET).remove([path]);
+          await sb.storage.from(BUCKET).remove([photoPath]);
           await sb.from('entries').delete().eq('user_id', currentUser.id).eq('entry_date', entryDate);
 
           const cacheKey = `${currentUser.id}:${ymKey(y,m)}`;
