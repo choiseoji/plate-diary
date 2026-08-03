@@ -351,7 +351,7 @@
 
   .toast{
     position:absolute;
-    bottom:26px;
+    bottom:80px;
     left:50%;
     transform:translateX(-50%);
     background:var(--ink);
@@ -363,8 +363,9 @@
     opacity:0;
     pointer-events:none;
     transition:opacity .25s ease, bottom .25s ease;
+    white-space:nowrap;
   }
-  .toast.show{ opacity:1; bottom:36px; }
+  .toast.show{ opacity:1; bottom:90px; }
 
   /* ---------- Sticker ---------- */
   .plate-wrap.sticker{
@@ -394,6 +395,193 @@
     object-fit:contain;
     filter:drop-shadow(0 4px 18px rgba(43,58,52,0.30));
   }
+
+  /* ---------- Bottom Nav ---------- */
+  .bottom-nav{
+    display:flex;
+    background:var(--plate);
+    border-top:1px solid var(--line);
+    padding:8px 0 16px;
+    flex-shrink:0;
+  }
+  .nav-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    color:var(--sage);
+    font-family:'Noto Sans KR';
+    font-size:11px;
+    font-weight:500;
+    padding:6px 0;
+    transition:color .15s;
+  }
+  .nav-btn.active{ color:var(--accent-dark); }
+
+  /* ---------- Feed ---------- */
+  .feed-date-label{
+    font-family:'Space Mono', monospace;
+    font-size:12px;
+    color:var(--ink-soft);
+    margin-bottom:16px;
+    text-align:center;
+  }
+  .feed-empty{
+    text-align:center;
+    color:var(--sage);
+    font-size:13px;
+    padding:40px 0;
+  }
+  .feed-card{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+    cursor:pointer;
+  }
+  .feed-thumb{
+    width:56px;height:56px;
+    border-radius:50%;
+    overflow:hidden;
+    flex-shrink:0;
+    background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .feed-thumb.sticker{
+    border-radius:0;
+    overflow:visible;
+    background:transparent;
+  }
+  .feed-thumb img{ width:100%;height:100%;object-fit:cover; }
+  .feed-thumb.sticker img{ object-fit:contain;filter:drop-shadow(0 1px 4px rgba(43,58,52,0.2)); }
+  .feed-info{ flex:1;min-width:0; }
+  .feed-username{ font-weight:700;font-size:14px;margin-bottom:3px; }
+  .feed-preview{ font-size:12px;color:var(--ink-soft); }
+  .feed-arrow{ color:var(--sage);font-size:20px;font-weight:300; }
+
+  /* ---------- Comments (내 캘린더) ---------- */
+  .comments-section{
+    margin-top:12px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+  }
+  .comments-title{
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    margin-bottom:10px;
+  }
+  .comment-item{
+    margin-bottom:8px;
+    padding:10px 12px;
+    background:var(--bg);
+    border-radius:10px;
+  }
+  .comment-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:3px;
+  }
+  .comment-from{ font-weight:700;font-size:12.5px;color:var(--accent-dark); }
+  .comment-time{ font-size:11px;color:var(--sage); }
+  .comment-text{ font-size:13px;color:var(--ink); }
+  .no-comments{ font-size:12.5px;color:var(--sage);text-align:center;padding:10px 0; }
+
+  /* ---------- Feed Detail ---------- */
+  .feed-detail{
+    position:absolute;
+    inset:0;
+    background:var(--plate);
+    z-index:25;
+    display:flex;
+    flex-direction:column;
+    animation:slideIn .2s ease;
+  }
+  @keyframes slideIn{
+    0%{ transform:translateX(100%); }
+    100%{ transform:translateX(0); }
+  }
+  .feed-detail-header{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:16px 22px 12px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .back-btn{
+    background:none;border:none;cursor:pointer;
+    color:var(--ink-soft);
+    font-size:24px;
+    padding:0;
+    display:flex;align-items:center;
+    line-height:1;
+  }
+  .feed-detail-user{ font-weight:700;font-size:16px; }
+  .feed-detail-body{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 22px;
+  }
+  .feed-detail-photo{
+    width:200px;height:200px;
+    border-radius:50%;
+    overflow:hidden;
+    margin:0 auto 20px;
+    background:var(--bg);
+  }
+  .feed-detail-photo.sticker{
+    border-radius:0;
+    overflow:visible;
+    background:transparent;
+  }
+  .feed-detail-photo img{ width:100%;height:100%;object-fit:cover; }
+  .feed-detail-photo.sticker img{ object-fit:contain;filter:drop-shadow(0 4px 14px rgba(43,58,52,0.28)); }
+  .feed-detail-comments-title{
+    font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:10px;
+  }
+  .feed-no-comments{
+    text-align:center;color:var(--sage);font-size:13px;padding:20px 0;
+  }
+  .comment-input-row{
+    display:flex;
+    gap:8px;
+    padding:12px 22px;
+    border-top:1px solid var(--line);
+    background:var(--plate);
+    flex-shrink:0;
+  }
+  .comment-input{
+    flex:1;
+    padding:10px 14px;
+    border:1.5px solid var(--line);
+    border-radius:999px;
+    font-size:14px;
+    font-family:'Noto Sans KR';
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+  }
+  .comment-input:focus{ border-color:var(--accent); }
+  .comment-send-btn{
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:10px 18px;
+    font-family:'Noto Sans KR';
+    font-weight:700;
+    font-size:13px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .comment-send-btn:disabled{ background:#ccc;cursor:not-allowed; }
 </style>
 </head>
 <body>
@@ -449,7 +637,7 @@
     <p class="error-text" id="authError"></p>
   </div>
 
-  <!-- MAIN SCREEN -->
+  <!-- MAIN SCREEN (내 캘린더) -->
   <div class="screen hidden" id="mainScreen">
     <div class="header-row">
       <div class="header-title">오늘의 <span>한 접시</span></div>
@@ -473,6 +661,12 @@
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
 
+    <!-- 받은 댓글 -->
+    <div class="comments-section hidden" id="commentsSection">
+      <div class="comments-title">받은 댓글</div>
+      <div id="myCommentsList"></div>
+    </div>
+
     <div class="spacer"></div>
     <div class="fab-area">
       <button class="fab" id="fabBtn">
@@ -486,8 +680,38 @@
     <p class="hint-text" id="hintText">하루에 한 장, 오늘 먹은 음식을 담아보세요</p>
   </div>
 
-  <input type="file" accept="image/*" capture="environment" id="fileInput" class="hidden">
+  <!-- FEED SCREEN -->
+  <div class="screen hidden" id="feedScreen">
+    <div class="header-row">
+      <div class="header-title">오늘의 <span>피드</span></div>
+    </div>
+    <div class="feed-date-label" id="feedDateLabel"></div>
+    <div id="feedList"></div>
+  </div>
 
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav hidden" id="bottomNav">
+    <button class="nav-btn active" id="navCalendar">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/>
+        <line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      내 캘린더
+    </button>
+    <button class="nav-btn" id="navFeed">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+      피드
+    </button>
+  </nav>
+
+  <input type="file" accept="image/*" capture="environment" id="fileInput" class="hidden">
   <div class="toast" id="toast"></div>
 </div>
 
@@ -495,28 +719,38 @@
 (function(){
   const $ = (id) => document.getElementById(id);
 
-  // ======================================================
-  // SUPABASE CONFIG — 여기 두 값만 본인 프로젝트 값으로 채우면 됩니다.
-  // Supabase 대시보드 > Project Settings > API 에서 확인 가능
-  // ======================================================
   const SUPABASE_URL = 'https://nuhasltrqjebjearbzwv.supabase.co';
   const SUPABASE_ANON_KEY = 'sb_publishable__YRx767qMySMVndZFmMIbg_n11uQjgU';
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-  window._sb = sb; // 디버깅용: 브라우저 콘솔에서 _sb.auth.getSession() 등으로 확인 가능
+  window._sb = sb;
   const BUCKET = 'plate-photos';
-  const PSEUDO_DOMAIN = 'platediary.local'; // 아이디를 이메일 형태로 바꾸기 위한 가짜 도메인
+  const PSEUDO_DOMAIN = 'platediary.local';
 
   function usernameToEmail(username){
     return `${username.toLowerCase().trim()}@${PSEUDO_DOMAIN}`;
   }
 
-  let currentUser = null; // { id, username }
-  let viewYear, viewMonth; // viewMonth 0-11
-  let monthCache = {}; // { "userId:YYYY-MM": {day: photoPath} }
+  function escHtml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function formatTime(isoStr){
+    const d = new Date(isoStr);
+    const diff = (Date.now() - d) / 1000;
+    if(diff < 60) return '방금';
+    if(diff < 3600) return `${Math.floor(diff/60)}분 전`;
+    if(diff < 86400) return `${Math.floor(diff/3600)}시간 전`;
+    return `${d.getMonth()+1}/${d.getDate()}`;
+  }
+
+  let currentUser = null;
+  let viewYear, viewMonth;
+  let monthCache = {};
 
   const today = new Date();
   const todayY = today.getFullYear(), todayM = today.getMonth(), todayD = today.getDate();
+  const todayStr = `${todayY}-${String(todayM+1).padStart(2,'0')}-${String(todayD).padStart(2,'0')}`;
 
   function ymKey(y,m){ return `${y}-${String(m+1).padStart(2,'0')}`; }
   function dayKey(d){ return String(d).padStart(2,'0'); }
@@ -543,6 +777,23 @@
     _toastTimer = null;
     $('toast').classList.remove('show');
   }
+
+  // ---------- Profiles ----------
+  async function upsertProfile(userId, username){
+    await sb.from('profiles').upsert({ user_id: userId, username }, { onConflict: 'user_id' });
+  }
+
+  // ---------- Navigation ----------
+  function showTab(tab){
+    $('mainScreen').classList.toggle('hidden', tab !== 'calendar');
+    $('feedScreen').classList.toggle('hidden', tab !== 'feed');
+    $('navCalendar').classList.toggle('active', tab === 'calendar');
+    $('navFeed').classList.toggle('active', tab === 'feed');
+    if(tab === 'feed') loadFeed();
+  }
+
+  $('navCalendar').addEventListener('click', ()=> showTab('calendar'));
+  $('navFeed').addEventListener('click', ()=> showTab('feed'));
 
   // ---------- Auth tab switching ----------
   $('tabLogin').addEventListener('click', ()=>{
@@ -588,13 +839,12 @@
         return;
       }
       if(!data.session){
-        // 이메일 확인이 켜져있는 경우: Supabase 대시보드 > Authentication > Providers > Email
-        // 에서 "Confirm email"을 꺼주세요 (가짜 이메일이라 확인 메일을 받을 수 없음)
         errEl.textContent = '가입은 됐지만 로그인이 안 돼요. Supabase에서 이메일 확인을 꺼주세요.';
         $('signupBtn').disabled = false;
         return;
       }
       currentUser = { id: data.user.id, username: id };
+      await upsertProfile(currentUser.id, currentUser.username);
       enterApp();
     }catch(e){
       errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
@@ -621,6 +871,7 @@
         return;
       }
       currentUser = { id: data.user.id, username: id };
+      await upsertProfile(currentUser.id, currentUser.username);
       enterApp();
     }catch(e){
       errEl.textContent = '문제가 생겼어요. 다시 시도해주세요.';
@@ -633,17 +884,21 @@
     currentUser = null;
     monthCache = {};
     $('mainScreen').classList.add('hidden');
+    $('feedScreen').classList.add('hidden');
+    $('bottomNav').classList.add('hidden');
     $('authScreen').classList.remove('hidden');
+    $('navCalendar').classList.add('active');
+    $('navFeed').classList.remove('active');
     $('loginId').value=''; $('loginPw').value='';
   });
 
-  // 새로고침 후에도 로그인이 유지되도록 세션 복원 시도
   (async function restoreSession(){
     const { data } = await sb.auth.getSession();
     if(data.session && data.session.user){
       const u = data.session.user;
       const username = (u.user_metadata && u.user_metadata.username) || u.email.split('@')[0];
       currentUser = { id: u.id, username };
+      await upsertProfile(currentUser.id, currentUser.username);
       enterApp();
     }
   })();
@@ -651,12 +906,13 @@
   function enterApp(){
     $('authScreen').classList.add('hidden');
     $('mainScreen').classList.remove('hidden');
+    $('feedScreen').classList.add('hidden');
+    $('bottomNav').classList.remove('hidden');
     viewYear = todayY; viewMonth = todayM;
     loadMonth(viewYear, viewMonth);
   }
 
-  // ---------- Month data (Supabase table: entries) ----------
-  // table: entries(user_id uuid, entry_date date, photo_path text)
+  // ---------- Month data ----------
   async function fetchMonthEntries(y,m){
     const from = firstOfMonth(y,m);
     const to = firstOfNextMonth(y,m);
@@ -670,7 +926,7 @@
       if(error){ console.error(error); return {}; }
       const map = {};
       data.forEach(row => {
-        const d = row.entry_date.split('-')[2]; // "DD"
+        const d = row.entry_date.split('-')[2];
         const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(row.photo_path);
         map[d] = urlData.publicUrl;
       });
@@ -691,6 +947,13 @@
     }
     renderCalendar(y,m,entries);
     updateFab(y,m,entries);
+    // 오늘 달 볼 때만 댓글 섹션 표시
+    if(y === todayY && m === todayM){
+      $('commentsSection').classList.remove('hidden');
+      loadTodayComments();
+    } else {
+      $('commentsSection').classList.add('hidden');
+    }
   }
 
   $('prevMonth').addEventListener('click', ()=>{
@@ -784,7 +1047,6 @@
     e.target.value = '';
     if(!file) return;
 
-    // FAB 로딩 상태로 전환
     const fab = $('fabBtn');
     const fabLabel = $('fabLabel');
     fab.disabled = true;
@@ -835,7 +1097,6 @@
       console.error(err);
       hideToast();
       showToast('사진을 담지 못했어요. 다시 시도해주세요.');
-      // 실패 시 FAB 원래 상태 복원
       fab.classList.remove('done');
       fab.disabled = false;
       fabLabel.textContent = '오늘의 접시 담기';
@@ -858,7 +1119,6 @@
       const blob = await addStickerBorder(transparent);
       return { blob, isSticker: true };
     }catch(err){
-      // 배경 제거 실패 시 원형 크롭으로 폴백 (업로드는 항상 성공)
       console.error('[배경제거 실패, 원형 크롭으로 진행]', err);
       showPersistentToast('사진 처리 중...');
       const blob = await cropToCircleBlob(file);
@@ -896,12 +1156,11 @@
       const url = URL.createObjectURL(transparentBlob);
       img.onload = ()=>{
         URL.revokeObjectURL(url);
-        const size = 480; // 콘텐츠 영역
-        const pad  = 14;  // 흰 테두리 두께 (px)
+        const size = 480;
+        const pad  = 14;
         const W = size + pad * 2;
         const H = size + pad * 2;
 
-        // 1단계: 알파 채널을 pad만큼 팽창시켜 흰 테두리 생성
         const borderCanvas = document.createElement('canvas');
         borderCanvas.width = W; borderCanvas.height = H;
         const bCtx = borderCanvas.getContext('2d');
@@ -912,13 +1171,11 @@
           const oy = Math.round(Math.sin(angle) * pad);
           bCtx.drawImage(img, pad + ox, pad + oy, size, size);
         }
-        // 팽창된 영역을 흰색으로 채우기
         bCtx.globalCompositeOperation = 'source-in';
         bCtx.fillStyle = 'white';
         bCtx.fillRect(0, 0, W, H);
         bCtx.globalCompositeOperation = 'source-over';
 
-        // 2단계: 흰 테두리 위에 원본 이미지 합성
         const finalCanvas = document.createElement('canvas');
         finalCanvas.width = W; finalCanvas.height = H;
         const fCtx = finalCanvas.getContext('2d');
@@ -931,7 +1188,7 @@
     });
   }
 
-  // ---------- Modal ----------
+  // ---------- Modal (내 사진) ----------
   function openModal(y,m,d,photoUrl,isToday,isSticker){
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -974,6 +1231,191 @@
       });
     }
   }
+
+  // ---------- 받은 댓글 (내 캘린더) ----------
+  async function loadTodayComments(){
+    const list = $('myCommentsList');
+    list.innerHTML = '';
+
+    const { data, error } = await sb
+      .from('comments')
+      .select('*')
+      .eq('to_user_id', currentUser.id)
+      .eq('entry_date', todayStr)
+      .order('created_at', { ascending: true });
+
+    if(error || !data || data.length === 0){
+      list.innerHTML = '<p class="no-comments">아직 댓글이 없어요</p>';
+      return;
+    }
+
+    list.innerHTML = data.map(c => `
+      <div class="comment-item">
+        <div class="comment-header">
+          <span class="comment-from">${escHtml(c.from_username)}</span>
+          <span class="comment-time">${formatTime(c.created_at)}</span>
+        </div>
+        <div class="comment-text">${escHtml(c.content)}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---------- 피드 ----------
+  async function loadFeed(){
+    $('feedDateLabel').textContent = `${todayY}년 ${todayM+1}월 ${todayD}일`;
+    $('feedList').innerHTML = '<p class="feed-empty">불러오는 중...</p>';
+
+    try{
+      const { data: entries, error } = await sb
+        .from('entries')
+        .select('user_id, photo_path')
+        .eq('entry_date', todayStr)
+        .neq('user_id', currentUser.id);
+
+      if(error) throw error;
+      if(!entries || entries.length === 0){
+        $('feedList').innerHTML = '<p class="feed-empty">오늘 접시를 올린 친구가 없어요 🍽️</p>';
+        return;
+      }
+
+      const userIds = entries.map(e => e.user_id);
+
+      const [profilesRes, commentsRes] = await Promise.all([
+        sb.from('profiles').select('user_id, username').in('user_id', userIds),
+        sb.from('comments').select('to_user_id').in('to_user_id', userIds).eq('entry_date', todayStr)
+      ]);
+
+      const profileMap = {};
+      (profilesRes.data || []).forEach(p => profileMap[p.user_id] = p.username);
+
+      const countMap = {};
+      (commentsRes.data || []).forEach(c => {
+        countMap[c.to_user_id] = (countMap[c.to_user_id] || 0) + 1;
+      });
+
+      renderFeed(entries, profileMap, countMap);
+    }catch(e){
+      console.error(e);
+      $('feedList').innerHTML = '<p class="feed-empty">불러오지 못했어요. 다시 시도해주세요.</p>';
+    }
+  }
+
+  function renderFeed(entries, profileMap, countMap){
+    const list = $('feedList');
+    list.innerHTML = '';
+
+    entries.forEach(entry => {
+      const username = profileMap[entry.user_id] || '알 수 없음';
+      const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(entry.photo_path);
+      const photoUrl = urlData.publicUrl;
+      const isSticker = entry.photo_path.endsWith('.png');
+      const count = countMap[entry.user_id] || 0;
+
+      const card = document.createElement('div');
+      card.className = 'feed-card';
+      card.innerHTML = `
+        <div class="feed-thumb${isSticker ? ' sticker' : ''}">
+          <img src="${photoUrl}" alt="${escHtml(username)}의 접시">
+        </div>
+        <div class="feed-info">
+          <div class="feed-username">${escHtml(username)}</div>
+          <div class="feed-preview">${count > 0 ? `댓글 ${count}개` : '첫 댓글을 남겨보세요'}</div>
+        </div>
+        <span class="feed-arrow">›</span>
+      `;
+      card.addEventListener('click', ()=> openFeedDetail(entry.user_id, username, photoUrl, isSticker));
+      list.appendChild(card);
+    });
+  }
+
+  function openFeedDetail(toUserId, username, photoUrl, isSticker){
+    const detail = document.createElement('div');
+    detail.className = 'feed-detail';
+    detail.innerHTML = `
+      <div class="feed-detail-header">
+        <button class="back-btn" id="feedDetailBack">‹</button>
+        <div class="feed-detail-user">${escHtml(username)}의 오늘 접시</div>
+      </div>
+      <div class="feed-detail-body" id="feedDetailBody">
+        <div class="feed-detail-photo${isSticker ? ' sticker' : ''}">
+          <img src="${photoUrl}" alt="접시">
+        </div>
+        <div class="feed-detail-comments-title">댓글</div>
+        <div id="feedDetailComments">
+          <p class="feed-no-comments">불러오는 중...</p>
+        </div>
+      </div>
+      <div class="comment-input-row">
+        <input class="comment-input" id="feedCommentInput" placeholder="따뜻한 댓글을 남겨보세요" maxlength="100">
+        <button class="comment-send-btn" id="feedCommentSend">전송</button>
+      </div>
+    `;
+
+    $('feedScreen').appendChild(detail);
+
+    detail.querySelector('#feedDetailBack').addEventListener('click', ()=>{
+      detail.remove();
+      loadFeed();
+    });
+
+    async function loadDetailComments(){
+      const { data } = await sb
+        .from('comments')
+        .select('*')
+        .eq('to_user_id', toUserId)
+        .eq('entry_date', todayStr)
+        .order('created_at', { ascending: true });
+
+      const commentsEl = detail.querySelector('#feedDetailComments');
+      if(!data || data.length === 0){
+        commentsEl.innerHTML = '<p class="feed-no-comments">아직 댓글이 없어요. 첫 댓글을 남겨보세요!</p>';
+        return;
+      }
+      commentsEl.innerHTML = data.map(c => `
+        <div class="comment-item">
+          <div class="comment-header">
+            <span class="comment-from">${escHtml(c.from_username)}</span>
+            <span class="comment-time">${formatTime(c.created_at)}</span>
+          </div>
+          <div class="comment-text">${escHtml(c.content)}</div>
+        </div>
+      `).join('');
+      const body = detail.querySelector('#feedDetailBody');
+      body.scrollTop = body.scrollHeight;
+    }
+
+    loadDetailComments();
+
+    const sendBtn = detail.querySelector('#feedCommentSend');
+    const input = detail.querySelector('#feedCommentInput');
+
+    sendBtn.addEventListener('click', async ()=>{
+      const content = input.value.trim();
+      if(!content) return;
+      sendBtn.disabled = true;
+      try{
+        const { error } = await sb.from('comments').insert({
+          from_user_id: currentUser.id,
+          from_username: currentUser.username,
+          to_user_id: toUserId,
+          entry_date: todayStr,
+          content
+        });
+        if(error) throw error;
+        input.value = '';
+        await loadDetailComments();
+      }catch(e){
+        console.error(e);
+        showToast('댓글을 보내지 못했어요');
+      }
+      sendBtn.disabled = false;
+    });
+
+    input.addEventListener('keydown', (e)=>{
+      if(e.key === 'Enter') sendBtn.click();
+    });
+  }
+
 })();
 </script>
 </body>
