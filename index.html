@@ -34,11 +34,12 @@
   .phone{
     width:100%;
     max-width:400px;
-    min-height:100vh;
+    height:100vh;
     background: var(--plate);
     position:relative;
     display:flex;
     flex-direction:column;
+    overflow:hidden;
   }
   .notch{ display:none; }
   .screen{
@@ -46,9 +47,11 @@
     display:flex;
     flex-direction:column;
     padding:24px 22px 24px;
+    min-height:0;
     position:relative;
-    overflow-y:auto;
+    overflow:hidden;
   }
+  #authScreen{ overflow-y:auto; }
   .hidden{display:none !important;}
 
   /* ---------- Auth ---------- */
@@ -245,10 +248,7 @@
     100%{ transform:scale(1); opacity:1; }
   }
 
-  .spacer{ flex:1; }
-
   .fab-area{
-    margin-top:auto;
     padding-top:8px;
     display:flex;
     justify-content:center;
@@ -430,6 +430,11 @@
     margin-bottom:16px;
     text-align:center;
   }
+  #feedList{
+    flex:1;
+    overflow-y:auto;
+    min-height:0;
+  }
   .feed-empty{
     text-align:center;
     color:var(--sage);
@@ -469,6 +474,9 @@
     margin-top:12px;
     padding-top:16px;
     border-top:1px solid var(--line);
+    flex:1;
+    overflow-y:auto;
+    min-height:0;
   }
   .comments-title{
     font-size:13px;
@@ -667,7 +675,6 @@
       <div id="myCommentsList"></div>
     </div>
 
-    <div class="spacer"></div>
     <div class="fab-area">
       <button class="fab" id="fabBtn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
