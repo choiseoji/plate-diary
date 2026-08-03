@@ -940,7 +940,7 @@
       data.forEach(row => {
         const d = row.entry_date.split('-')[2];
         const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(row.photo_path);
-        map[d] = urlData.publicUrl;
+        map[d] = { url: urlData.publicUrl, path: row.photo_path };
       });
       return map;
     }catch(e){
@@ -1003,9 +1003,9 @@
       if(entries[dk]){
         plate.className = 'plate-wrap filled sticker';
         const img = document.createElement('img');
-        img.src = entries[dk];
+        img.src = entries[dk].url;
         plate.appendChild(img);
-        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday));
+        plate.addEventListener('click', ()=> openModal(y,m,d, entries[dk].url, entries[dk].path, isToday));
       } else {
         plate.className = 'plate-wrap';
         cell.addEventListener('click', ()=>{
@@ -1069,7 +1069,7 @@
       const realUserId = authData.user.id;
 
       const blob = await makeStickerBlob(file);
-      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.png`;
+      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}_${Date.now()}.png`;
 
       showPersistentToast('저장하는 중...');
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
@@ -1087,10 +1087,9 @@
       if(dbErr){ throw dbErr; }
 
       const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
-      const cacheBust = `?t=${Date.now()}`;
       const cacheKey = `${currentUser.id}:${ymKey(todayY,todayM)}`;
       let entries = monthCache[cacheKey] || {};
-      entries[dayKey(todayD)] = urlData.publicUrl + cacheBust;
+      entries[dayKey(todayD)] = { url: urlData.publicUrl, path };
       monthCache[cacheKey] = entries;
 
       if(viewYear===todayY && viewMonth===todayM){
@@ -1188,7 +1187,7 @@
   }
 
   // ---------- Modal (내 사진) ----------
-  function openModal(y,m,d,photoUrl,isToday){
+  function openModal(y,m,d,photoUrl,photoPath,isToday){
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
@@ -1208,8 +1207,7 @@
     if(delBtn){
       delBtn.addEventListener('click', async ()=>{
         try{
-          // jpg 파일도 혹시 남아있으면 함께 삭제
-          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.png`;
+          const path = photoPath;
           const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
           await sb.storage.from(BUCKET).remove([path]);
           await sb.from('entries').delete().eq('user_id', currentUser.id).eq('entry_date', entryDate);
