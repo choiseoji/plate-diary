@@ -995,12 +995,11 @@
       const plate = document.createElement('div');
       const dk = dayKey(d);
       if(entries[dk]){
-        const isSticker = entries[dk].includes('.png');
-        plate.className = 'plate-wrap filled' + (isSticker ? ' sticker' : '');
+        plate.className = 'plate-wrap filled sticker';
         const img = document.createElement('img');
         img.src = entries[dk];
         plate.appendChild(img);
-        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday, isSticker));
+        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday));
       } else {
         plate.className = 'plate-wrap';
         cell.addEventListener('click', ()=>{
@@ -1063,14 +1062,12 @@
       }
       const realUserId = authData.user.id;
 
-      const { blob, isSticker } = await makeStickerBlob(file);
-      const ext = isSticker ? 'png' : 'jpg';
-      const contentType = isSticker ? 'image/png' : 'image/jpeg';
-      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.${ext}`;
+      const blob = await makeStickerBlob(file);
+      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.png`;
 
       showPersistentToast('저장하는 중...');
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
-        contentType,
+        contentType: 'image/png',
         upsert: true
       });
       if(upErr){ throw upErr; }
@@ -1108,25 +1105,18 @@
 
   async function makeStickerBlob(file){
     showPersistentToast('AI 모델 준비 중... ☕');
-    try{
-      const { removeBackground } = await import('https://esm.sh/@imgly/background-removal');
-      const transparent = await removeBackground(file, {
-        progress: (key, current, total)=>{
-          if(total > 0){
-            const pct = Math.round((current / total) * 100);
-            showPersistentToast(`배경 지우는 중... ${pct}%`);
-          }
+    const { removeBackground } = await import('https://esm.sh/@imgly/background-removal');
+    const transparent = await removeBackground(file, {
+      progress: (key, current, total)=>{
+        if(total > 0){
+          const pct = Math.round((current / total) * 100);
+          showPersistentToast(`배경 지우는 중... ${pct}%`);
         }
-      });
-      showPersistentToast('스티커 테두리 그리는 중... ✂️');
-      const blob = await addStickerBorder(transparent);
-      return { blob, isSticker: true };
-    }catch(err){
-      console.error('[배경제거 실패, 원형 크롭으로 진행]', err);
-      showPersistentToast('사진 처리 중...');
-      const blob = await cropToCircleBlob(file);
-      return { blob, isSticker: false };
-    }
+      }
+    });
+    showPersistentToast('스티커 테두리 그리는 중... ✂️');
+    const blob = await addStickerBorder(transparent);
+    return blob;
   }
 
   function cropToCircleBlob(file){
@@ -1192,13 +1182,13 @@
   }
 
   // ---------- Modal (내 사진) ----------
-  function openModal(y,m,d,photoUrl,isToday,isSticker){
+  function openModal(y,m,d,photoUrl,isToday){
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
         <div class="modal-date">${y}. ${String(m+1).padStart(2,'0')}. ${String(d).padStart(2,'0')}</div>
-        <div class="modal-plate${isSticker ? ' sticker' : ''}"><img src="${photoUrl}"></div>
+        <div class="modal-plate sticker"><img src="${photoUrl}"></div>
         <div class="modal-actions">
           <button class="ghost-btn" id="modalCloseBtn">닫기</button>
           ${isToday ? '<button class="ghost-btn danger" id="modalDeleteBtn">다시 찍기</button>' : ''}
@@ -1212,8 +1202,8 @@
     if(delBtn){
       delBtn.addEventListener('click', async ()=>{
         try{
-          const ext = isSticker ? 'png' : 'jpg';
-          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.${ext}`;
+          // jpg 파일도 혹시 남아있으면 함께 삭제
+          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.png`;
           const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
           await sb.storage.from(BUCKET).remove([path]);
           await sb.from('entries').delete().eq('user_id', currentUser.id).eq('entry_date', entryDate);
@@ -1311,13 +1301,12 @@
       const username = profileMap[entry.user_id] || '알 수 없음';
       const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(entry.photo_path);
       const photoUrl = urlData.publicUrl;
-      const isSticker = entry.photo_path.endsWith('.png');
       const count = countMap[entry.user_id] || 0;
 
       const card = document.createElement('div');
       card.className = 'feed-card';
       card.innerHTML = `
-        <div class="feed-thumb${isSticker ? ' sticker' : ''}">
+        <div class="feed-thumb sticker">
           <img src="${photoUrl}" alt="${escHtml(username)}의 접시">
         </div>
         <div class="feed-info">
@@ -1326,12 +1315,12 @@
         </div>
         <span class="feed-arrow">›</span>
       `;
-      card.addEventListener('click', ()=> openFeedDetail(entry.user_id, username, photoUrl, isSticker));
+      card.addEventListener('click', ()=> openFeedDetail(entry.user_id, username, photoUrl));
       list.appendChild(card);
     });
   }
 
-  function openFeedDetail(toUserId, username, photoUrl, isSticker){
+  function openFeedDetail(toUserId, username, photoUrl){
     const detail = document.createElement('div');
     detail.className = 'feed-detail';
     detail.innerHTML = `
@@ -1340,7 +1329,7 @@
         <div class="feed-detail-user">${escHtml(username)}의 오늘 접시</div>
       </div>
       <div class="feed-detail-body" id="feedDetailBody">
-        <div class="feed-detail-photo${isSticker ? ' sticker' : ''}">
+        <div class="feed-detail-photo sticker">
           <img src="${photoUrl}" alt="접시">
         </div>
         <div class="feed-detail-comments-title">댓글</div>
