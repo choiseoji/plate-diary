@@ -1084,9 +1084,10 @@
       if(dbErr){ throw dbErr; }
 
       const { data: urlData } = sb.storage.from(BUCKET).getPublicUrl(path);
+      const cacheBust = `?t=${Date.now()}`;
       const cacheKey = `${currentUser.id}:${ymKey(todayY,todayM)}`;
       let entries = monthCache[cacheKey] || {};
-      entries[dayKey(todayD)] = urlData.publicUrl;
+      entries[dayKey(todayD)] = urlData.publicUrl + cacheBust;
       monthCache[cacheKey] = entries;
 
       if(viewYear===todayY && viewMonth===todayM){
