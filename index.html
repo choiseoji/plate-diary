@@ -379,6 +379,35 @@
     transition:opacity .25s ease, bottom .25s ease;
   }
   .toast.show{ opacity:1; bottom:36px; }
+
+  /* ---------- Sticker ---------- */
+  .plate-wrap.sticker{
+    border:none;
+    background:transparent;
+    overflow:visible;
+    border-radius:0;
+    cursor:pointer;
+  }
+  .plate-wrap.sticker img{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    filter:drop-shadow(0 2px 8px rgba(43,58,52,0.28));
+  }
+  .day-cell.today .plate-wrap.sticker{ border:none; }
+  .modal-plate.sticker{
+    border-radius:0;
+    overflow:visible;
+    border:none;
+    box-shadow:none;
+    background:transparent;
+    width:220px;
+    height:220px;
+  }
+  .modal-plate.sticker img{
+    object-fit:contain;
+    filter:drop-shadow(0 4px 18px rgba(43,58,52,0.30));
+  }
 </style>
 </head>
 <body>
@@ -508,11 +537,25 @@
   function firstOfMonth(y,m){ return `${y}-${String(m+1).padStart(2,'0')}-01`; }
   function firstOfNextMonth(y,m){ const nm=m+1; return nm>11 ? `${y+1}-01-01` : `${y}-${String(nm+1).padStart(2,'0')}-01`; }
 
+  let _toastTimer = null;
   function showToast(msg){
+    if(_toastTimer) clearTimeout(_toastTimer);
     const t = $('toast');
     t.textContent = msg;
     t.classList.add('show');
-    setTimeout(()=> t.classList.remove('show'), 1800);
+    _toastTimer = setTimeout(()=>{ t.classList.remove('show'); _toastTimer=null; }, 1800);
+  }
+  function showPersistentToast(msg){
+    if(_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = null;
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+  }
+  function hideToast(){
+    if(_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = null;
+    $('toast').classList.remove('show');
   }
 
   // ---------- Auth tab switching ----------
@@ -697,11 +740,12 @@
       const plate = document.createElement('div');
       const dk = dayKey(d);
       if(entries[dk]){
-        plate.className = 'plate-wrap filled';
+        const isSticker = entries[dk].includes('.png');
+        plate.className = 'plate-wrap filled' + (isSticker ? ' sticker' : '');
         const img = document.createElement('img');
         img.src = entries[dk];
         plate.appendChild(img);
-        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday));
+        plate.addEventListener('click', ()=> openModal(y,m,d,entries[dk], isToday, isSticker));
       } else {
         plate.className = 'plate-wrap';
         cell.addEventListener('click', ()=>{
@@ -748,11 +792,18 @@
     $('fileInput').click();
   });
 
-  // ---------- Image capture & crop ----------
+  // ---------- Image capture & sticker ----------
   $('fileInput').addEventListener('change', async (e)=>{
     const file = e.target.files[0];
     e.target.value = '';
     if(!file) return;
+
+    // FAB 로딩 상태로 전환
+    const fab = $('fabBtn');
+    const fabLabel = $('fabLabel');
+    fab.disabled = true;
+    fab.classList.add('done');
+    fabLabel.textContent = '스티커 만드는 중...';
 
     try{
       const { data: authData, error: authErr } = await sb.auth.getUser();
@@ -760,13 +811,14 @@
         showToast('로그인이 풀린 것 같아요. 다시 로그인해주세요.');
         return;
       }
-      const realUserId = authData.user.id; // 캐시된 currentUser.id 대신 지금 이 순간의 실제 인증 uid 사용
+      const realUserId = authData.user.id;
 
-      const blob = await cropToPlateBlob(file);
-      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.jpg`;
+      const blob = await makeStickerBlob(file);
+      const path = `${realUserId}/${ymKey(todayY,todayM)}/${dayKey(todayD)}.png`;
 
+      showPersistentToast('저장하는 중...');
       const { error: upErr } = await sb.storage.from(BUCKET).upload(path, blob, {
-        contentType: 'image/jpeg',
+        contentType: 'image/png',
         upsert: true
       });
       if(upErr){ throw upErr; }
@@ -789,45 +841,95 @@
         renderCalendar(todayY,todayM,entries);
         updateFab(todayY,todayM,entries);
       }
+      hideToast();
       showToast('오늘의 접시를 담았어요 🍚');
     }catch(err){
       console.error(err);
+      hideToast();
       showToast('사진을 담지 못했어요. 다시 시도해주세요.');
+      // 실패 시 FAB 원래 상태 복원
+      fab.classList.remove('done');
+      fab.disabled = false;
+      fabLabel.textContent = '오늘의 접시 담기';
     }
   });
 
-  function cropToPlateBlob(file){
-    return new Promise((resolve, reject)=>{
-      const reader = new FileReader();
-      reader.onload = (ev)=>{
-        const img = new Image();
-        img.onload = ()=>{
-          const size = 480;
-          const canvas = document.createElement('canvas');
-          canvas.width = size; canvas.height = size;
-          const ctx = canvas.getContext('2d');
-          const srcSize = Math.min(img.width, img.height);
-          const sx = (img.width - srcSize)/2;
-          const sy = (img.height - srcSize)/2;
-          ctx.drawImage(img, sx, sy, srcSize, srcSize, 0, 0, size, size);
-          canvas.toBlob((blob)=> resolve(blob), 'image/jpeg', 0.8);
-        };
-        img.onerror = reject;
-        img.src = ev.target.result;
+  async function makeStickerBlob(file){
+    showPersistentToast('AI 모델 준비 중... (처음엔 다운로드가 필요해요 ☕)');
+    try{
+      const { removeBackground } = await import(
+        'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/index.mjs'
+      );
+      const transparent = await removeBackground(file, {
+        publicPath: 'https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.4.5/dist/browser/',
+        progress: (key, current, total)=>{
+          if(total > 0){
+            const pct = Math.round((current / total) * 100);
+            if(key.includes('fetch') || key.includes('model')){
+              showPersistentToast(`AI 모델 다운로드 중... ${pct}%`);
+            } else {
+              showPersistentToast(`배경 지우는 중... ${pct}%`);
+            }
+          }
+        }
+      });
+      showPersistentToast('스티커 테두리 그리는 중... ✂️');
+      return await addStickerBorder(transparent);
+    }catch(err){
+      hideToast();
+      throw err;
+    }
+  }
+
+  function addStickerBorder(transparentBlob){
+    return new Promise((resolve)=>{
+      const img = new Image();
+      const url = URL.createObjectURL(transparentBlob);
+      img.onload = ()=>{
+        URL.revokeObjectURL(url);
+        const size = 480; // 콘텐츠 영역
+        const pad  = 14;  // 흰 테두리 두께 (px)
+        const W = size + pad * 2;
+        const H = size + pad * 2;
+
+        // 1단계: 알파 채널을 pad만큼 팽창시켜 흰 테두리 생성
+        const borderCanvas = document.createElement('canvas');
+        borderCanvas.width = W; borderCanvas.height = H;
+        const bCtx = borderCanvas.getContext('2d');
+        const steps = 32;
+        for(let i = 0; i < steps; i++){
+          const angle = (i / steps) * Math.PI * 2;
+          const ox = Math.round(Math.cos(angle) * pad);
+          const oy = Math.round(Math.sin(angle) * pad);
+          bCtx.drawImage(img, pad + ox, pad + oy, size, size);
+        }
+        // 팽창된 영역을 흰색으로 채우기
+        bCtx.globalCompositeOperation = 'source-in';
+        bCtx.fillStyle = 'white';
+        bCtx.fillRect(0, 0, W, H);
+        bCtx.globalCompositeOperation = 'source-over';
+
+        // 2단계: 흰 테두리 위에 원본 이미지 합성
+        const finalCanvas = document.createElement('canvas');
+        finalCanvas.width = W; finalCanvas.height = H;
+        const fCtx = finalCanvas.getContext('2d');
+        fCtx.drawImage(borderCanvas, 0, 0);
+        fCtx.drawImage(img, pad, pad, size, size);
+
+        finalCanvas.toBlob(resolve, 'image/png');
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+      img.src = url;
     });
   }
 
   // ---------- Modal ----------
-  function openModal(y,m,d,photoUrl,isToday){
+  function openModal(y,m,d,photoUrl,isToday,isSticker){
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
     overlay.innerHTML = `
       <div class="modal-card">
         <div class="modal-date">${y}. ${String(m+1).padStart(2,'0')}. ${String(d).padStart(2,'0')}</div>
-        <div class="modal-plate"><img src="${photoUrl}"></div>
+        <div class="modal-plate${isSticker ? ' sticker' : ''}"><img src="${photoUrl}"></div>
         <div class="modal-actions">
           <button class="ghost-btn" id="modalCloseBtn">닫기</button>
           ${isToday ? '<button class="ghost-btn danger" id="modalDeleteBtn">다시 찍기</button>' : ''}
@@ -841,7 +943,8 @@
     if(delBtn){
       delBtn.addEventListener('click', async ()=>{
         try{
-          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.jpg`;
+          const ext = isSticker ? 'png' : 'jpg';
+          const path = `${currentUser.id}/${ymKey(y,m)}/${dayKey(d)}.${ext}`;
           const entryDate = `${y}-${String(m+1).padStart(2,'0')}-${dayKey(d)}`;
           await sb.storage.from(BUCKET).remove([path]);
           await sb.from('entries').delete().eq('user_id', currentUser.id).eq('entry_date', entryDate);
