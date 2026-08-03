@@ -248,46 +248,6 @@
     100%{ transform:scale(1); opacity:1; }
   }
 
-  .fab-area{
-    padding-top:8px;
-    display:flex;
-    justify-content:center;
-  }
-  .fab{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:var(--accent);
-    color:#fff;
-    border:none;
-    padding:13px 22px;
-    border-radius:999px;
-    font-family:'Noto Sans KR';
-    font-weight:700;
-    font-size:14px;
-    cursor:pointer;
-    box-shadow:0 6px 18px rgba(232,163,77,0.45);
-    transition:transform .15s ease, background .15s ease;
-    animation:pulse 2.4s ease-in-out infinite;
-  }
-  .fab:active{ transform:scale(0.96); }
-  .fab.done{
-    background:#E4EAE6;
-    color:var(--ink-soft);
-    box-shadow:none;
-    cursor:default;
-    animation:none;
-  }
-  @keyframes pulse{
-    0%,100%{ box-shadow:0 6px 18px rgba(232,163,77,0.45); }
-    50%{ box-shadow:0 6px 22px rgba(232,163,77,0.7); }
-  }
-  .hint-text{
-    text-align:center;
-    font-size:11.5px;
-    color:var(--ink-soft);
-    margin-top:10px;
-  }
 
   /* ---------- Modal ---------- */
   .modal-overlay{
@@ -399,6 +359,7 @@
   /* ---------- Bottom Nav ---------- */
   .bottom-nav{
     display:flex;
+    align-items:flex-end;
     background:var(--plate);
     border-top:1px solid var(--line);
     padding:8px 0 16px;
@@ -421,6 +382,45 @@
     transition:color .15s;
   }
   .nav-btn.active{ color:var(--accent-dark); }
+  .nav-center-btn{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:4px;
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:'Noto Sans KR';
+    font-size:11px;
+    font-weight:500;
+    padding:0;
+    margin-bottom:2px;
+  }
+  .nav-center-circle{
+    width:52px;height:52px;
+    border-radius:50%;
+    background:var(--accent);
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;
+    box-shadow:0 4px 14px rgba(232,163,77,0.55);
+    transition:transform .15s ease, background .15s ease;
+    margin-top:-20px;
+    animation:pulse 2.4s ease-in-out infinite;
+  }
+  .nav-center-btn:active .nav-center-circle{ transform:scale(0.93); }
+  .nav-center-btn.done .nav-center-circle{
+    background:#E4EAE6;
+    box-shadow:none;
+    animation:none;
+  }
+  .nav-center-btn.done{ color:var(--sage); cursor:default; }
+  .nav-center-label{ color:var(--accent-dark);font-weight:700; }
+  .nav-center-btn.done .nav-center-label{ color:var(--sage);font-weight:500; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 4px 14px rgba(232,163,77,0.55); }
+    50%{ box-shadow:0 4px 20px rgba(232,163,77,0.8); }
+  }
 
   /* ---------- Feed ---------- */
   .feed-date-label{
@@ -675,16 +675,6 @@
       <div id="myCommentsList"></div>
     </div>
 
-    <div class="fab-area">
-      <button class="fab" id="fabBtn">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-        <span id="fabLabel">오늘의 접시 담기</span>
-      </button>
-    </div>
-    <p class="hint-text" id="hintText">하루에 한 장, 오늘 먹은 음식을 담아보세요</p>
   </div>
 
   <!-- FEED SCREEN -->
@@ -706,6 +696,15 @@
         <line x1="3" y1="10" x2="21" y2="10"/>
       </svg>
       내 캘린더
+    </button>
+    <button class="nav-center-btn" id="fabBtn">
+      <div class="nav-center-circle">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+      </div>
+      <span class="nav-center-label" id="fabLabel">접시 담기</span>
     </button>
     <button class="nav-btn" id="navFeed">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1021,25 +1020,21 @@
     const isCurrentMonthView = (y===todayY && m===todayM);
     const fab = $('fabBtn');
     const label = $('fabLabel');
-    const hint = $('hintText');
     if(!isCurrentMonthView){
       fab.classList.add('done');
       fab.disabled = true;
-      label.textContent = '오늘로 이동해서 담아보세요';
-      hint.textContent = '이번 달 기록은 눌러서 볼 수 있어요';
+      label.textContent = '완료';
       return;
     }
     const dk = dayKey(todayD);
     if(entries[dk]){
       fab.classList.add('done');
       fab.disabled = true;
-      label.textContent = '오늘 접시 완료';
-      hint.textContent = '내일 또 새로운 접시를 담아주세요';
+      label.textContent = '완료';
     } else {
       fab.classList.remove('done');
       fab.disabled = false;
-      label.textContent = '오늘의 접시 담기';
-      hint.textContent = '하루에 한 장, 오늘 먹은 음식을 담아보세요';
+      label.textContent = '접시 담기';
     }
   }
 
